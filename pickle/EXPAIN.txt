@@ -1,0 +1,2 @@
+This is a folder where last fitnesses and generation are saved.
+
