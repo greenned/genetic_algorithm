@@ -9,3 +9,6 @@
 
 # jupyter notebook
 *.ipynb
+
+.gitignore
+genetic_algorithm_img.ipynb
