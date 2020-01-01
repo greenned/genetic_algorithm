@@ -1,0 +1,11 @@
+# jpg파일
+*.jpg
+
+# pickle
+*.pickle
+
+# git
+.git
+
+# jupyter notebook
+*.ipynb
