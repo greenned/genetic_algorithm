@@ -6,9 +6,6 @@ import cv2, time, argparse
 
 
 
-# chormosome의 개수
-POPULATION = 100
-
 # 돌연변이 생성 비율
 MUTATION_PROB = 0.1
 
@@ -31,6 +28,7 @@ class chromoSome:
     def fitness(self):
         score = 0
         dist = np.linalg.norm(self.real_img.astype('float') - self.img.astype('float')) / (self.img_size[0] * self.img_size[1])
+        
         # 높을수록 좋음
         score = 1. / dist
         
@@ -38,30 +36,53 @@ class chromoSome:
     
     def create_random_img(self):
         self.img = np.zeros(self.img_size, np.uint8)
-        self.assign_circle()
+        random_assign = random.choice([chromoSome.assign_circle, chromoSome.assign_polygon])
+        random_assign(self.img, self.max_shapes, self.img_size)
+        # self.assign_circle()
         
         
-    def assign_circle(self):
-        overlay  = self.img.copy()
-        n_shapes = np.random.randint(0, self.max_shapes)
+    def assign_circle(img, max_shapes, img_size):
+        overlay  = img.copy()
+        n_shapes = np.random.randint(0, max_shapes)
         
         for _ in range(n_shapes):
-            center_x = np.random.randint(0, self.img_size[1])
-            center_y = np.random.randint(0, self.img_size[0])
-            radius = np.random.randint(0, self.img_size[0]/4)
-            #radius   = np.random.randint(0, int(self.img_size[0] / (1.1*self.res)))
+            center_x = np.random.randint(0, img_size[1])
+            center_y = np.random.randint(0, img_size[0])
+            radius = np.random.randint(0, img_size[0]/4)
+            #radius   = np.random.randint(0, int(img_size[0] / (1.1*res)))
             opacity  = np.random.rand(1)[0]
             color    = chromoSome.get_bgr_color()
             cv2.circle(overlay, (center_x, center_y), radius, color, -1)
-            cv2.addWeighted(overlay, opacity, self.img, 1 - opacity, 0, self.img)
+            cv2.addWeighted(overlay, opacity, img, 1 - opacity, 0, img)
 
+    def assign_polygon(img, max_shapes, img_size):
+        pts = []
+        point = [np.random.randint(0, img_size[1]), np.random.randint(0, img_size[0])]
+        pts.append(point)
+
+        n_shapes = np.random.randint(0, max_shapes)
+
+        for i in range(n_shapes):
+            new_point = [point[0] + np.random.randint(-1, 2) * np.random.randint(0, int(img_size[1] / 4)), point[1] + np.random.randint(-1, 2) * np.random.randint(0, int(img_size[0] / 4))]
+            pts.append(new_point)
+
+
+        pts 	 = np.array(pts)
+        pts 	 = pts.reshape((-1, 1, 2))
+        opacity  = np.random.rand(1)[0]
+        color    = chromoSome.get_bgr_color()
+
+
+        overlay  = img.copy()
+        cv2.fillPoly(overlay, [pts], color, 8)
+        cv2.addWeighted(overlay, opacity, img, 1 - opacity, 0 ,img)
 
     def get_bgr_color():
         blue  = np.random.randint(0, 255)
         green = np.random.randint(0, 255)
         red   = np.random.randint(0, 255)
         return (blue, green, red)
-        
+
 
 class Generation:
     cnt = 0
@@ -114,16 +135,19 @@ class Generation:
     
     def make_mutation(self, child):
         overlay  = child.img.copy()
-        n_shapes = np.random.randint(0, 10)
+        n_shapes = np.random.randint(1, 10)
+
+        random_assign = random.choice([chromoSome.assign_circle, chromoSome.assign_polygon])
+        random_assign(child.img, n_shapes, child.img.shape)
         
-        for _ in range(n_shapes):
-            center_x = np.random.randint(0, child.img.shape[1])
-            center_y = np.random.randint(0, child.img.shape[0])
-            radius = np.random.randint(0, child.img.shape[0]/4)
-            opacity  = np.random.rand(1)[0]
-            color    = chromoSome.get_bgr_color()
-            cv2.circle(overlay, (center_x, center_y), radius, color, -1)
-            cv2.addWeighted(overlay, opacity, child.img, 1 - opacity, 0, child.img)
+        # for _ in range(n_shapes):
+        #     center_x = np.random.randint(0, child.img.shape[1])
+        #     center_y = np.random.randint(0, child.img.shape[0])
+        #     radius = np.random.randint(0, child.img.shape[0]/4)
+        #     opacity  = np.random.rand(1)[0]
+        #     color    = chromoSome.get_bgr_color()
+        #     cv2.circle(overlay, (center_x, center_y), radius, color, -1)
+        #     cv2.addWeighted(overlay, opacity, child.img, 1 - opacity, 0, child.img)
         
         return child
     
@@ -164,8 +188,8 @@ def main(file_path, n_population, n_generation):
                 best = gen.get_best
                 fitness_list.append(best.fitness)
 
-                if i % 20 ==0:
-                    cv2.imwrite("./img/{}_img.jpg".format(i), best.img)
+                if i % 100 == 0:
+                    cv2.imwrite("/Users/greenned/result/유전알고리즘/picaso_with_circle_and_polygon/{}_img.jpg".format(i), best.img)
     finally:
         save_pickle(fitness_list, "./pickle/fitness_list")
         save_pickle(gen, "./pickle/last_generation")
@@ -173,9 +197,9 @@ def main(file_path, n_population, n_generation):
 
 if __name__ == "__main__":
 
-    DEBUG = True
+    DEBUG = False
     if DEBUG:
-        file_path = "Bigger-Splash-1967.jpg"
+        file_path = "picaso.png"
         n_population = 100
         n_generation = 100000
         main(file_path, n_population, n_generation)
