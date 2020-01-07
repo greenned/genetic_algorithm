@@ -189,7 +189,7 @@ def main(file_path, n_population, n_generation):
                 fitness_list.append(best.fitness)
 
                 if i % 100 == 0:
-                    cv2.imwrite("/Users/greenned/result/유전알고리즘/picaso_with_circle_and_polygon/{}_img.jpg".format(i), best.img)
+                    cv2.imwrite("./img/{}_img.jpg".format(i), best.img)
     finally:
         save_pickle(fitness_list, "./pickle/fitness_list")
         save_pickle(gen, "./pickle/last_generation")
